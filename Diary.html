@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Personal Diary</title>
+	<style>
+		:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;padding:0;margin:0}
+		body{margin:0;background:#f6f7fb;color:#111}
+		header{background:#4b6cff;color:#fff;padding:16px 20px;position:relative}
+		header h1{margin:0;font-size:20px}
+		.container{max-width:980px;margin:20px auto;padding:16px}
+		.layout{display:grid;grid-template-columns:1fr 360px;gap:16px}
+		@media(max-width:880px){.layout{grid-template-columns:1fr}}
+		.card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 4px rgba(20,20,40,0.06)}
+		label{display:block;font-weight:600;margin-top:8px;font-size:13px}
+		input[type=text], input[type=date], textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #e6e9ef;border-radius:6px;font-size:14px;box-sizing:border-box}
+		textarea{min-height:180px;resize:vertical}
+		.buttons{display:flex;gap:8px;margin-top:10px}
+		button{background:#4b6cff;color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+		button.ghost{background:#eef1ff;color:#234}
+		.entries{display:flex;flex-direction:column;gap:8px;max-height:66vh;overflow:auto;padding:8px}
+		.entry-item{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:linear-gradient(180deg,#fff,#fbfdff)}
+		.entry-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+		.entry-title{font-weight:700}
+		.small{font-size:12px;color:#556}
+		.controls{display:flex;gap:6px}
+		.controls button{padding:6px 8px;font-size:13px}
+		.search{display:flex;gap:8px;margin-bottom:8px}
+		input[type=file]{display:none}
+	</style>
+</head>
+<body>
+	<header>
+		<h1 data-i18n="headerTitle">Personal Diary (local-only)</h1>
+		<div style="position:absolute;right:12px;top:12px">
+			<select id="langSelect" title="Change language">
+				<option value="en">English</option>
+				<option value="es">Español</option>
+				<option value="vi">Tiếng Việt</option>
+				<option value="fr">Français</option>
+			</select>
+		</div>
+	</header>
+	<div class="container">
+		<div class="layout">
+			<div class="card">
+				<form id="entryForm">
+					  <label for="title" data-i18n="labelTitle">Title</label>
+					  <input type="text" id="title" data-i18n-placeholder="titlePlaceholder" placeholder="Short title (optional)" />
+
+					  <label for="date" data-i18n="labelDate">Date</label>
+					  <input type="date" id="date" />
+
+					  <label for="content" data-i18n="labelContent">Entry</label>
+					  <textarea id="content" data-i18n-placeholder="contentPlaceholder" placeholder="Write your diary entry here..."></textarea>
+
+					<div class="buttons">
+						<button id="saveBtn" type="button" data-i18n="saveBtn">Save Entry</button>
+						<button id="newBtn" type="button" class="ghost" data-i18n="newBtn">New</button>
+						<button id="exportBtn" type="button" class="ghost" data-i18n="exportBtn">Export</button>
+						<button id="importBtn" type="button" class="ghost" data-i18n="importBtn">Import</button>
+						<input id="fileInput" type="file" accept="application/json" />
+					</div>
+				</form>
+			</div>
+
+			<aside>
+				<div class="card">
+					<div style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+						<div id="imageArea" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+							<div id="imageWrapper" style="width:100%;height:200px;border-radius:8px;overflow:hidden;background:#f0f2ff;display:flex;align-items:center;justify-content:center">
+								<img id="headerImage" alt="Diary image" style="width:100%;height:100%;object-fit:cover;display:none" />
+								<div id="imagePlaceholder" class="small" data-i18n="noImage">No image set</div>
+							</div>
+							<div style="display:flex;gap:8px;width:100%">
+								<button id="changeImageBtn" type="button" class="ghost" data-i18n="changeImage">Change Image</button>
+								<button id="removeImageBtn" type="button" class="ghost" data-i18n="removeImage">Remove Image</button>
+								<input id="imageFileInput" type="file" accept="image/*" style="display:none" />
+							</div>
+						</div>
+
+<div id="spotifyArea" style="width:100%;display:flex;flex-direction:column;gap:8px">
+							<div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+								<div>
+									<div style="font-weight:700" data-i18n="spotifyTitle">Spotify — Now Playing</div>
+									<div class="small" data-i18n="spotifySubtitle">Connect to your Spotify account to show current track</div>
+								</div>
+								<button id="spotifyConnectBtn" type="button" data-i18n="connectBtn">Connect</button>
+							</div>
+
+							<div id="spotifyStatus" style="display:flex;gap:8px;align-items:center;min-height:60px">
+								<img id="spotifyAlbum" src="" alt="album" style="width:56px;height:56px;border-radius:6px;display:none;object-fit:cover" />
+								<div style="flex:1">
+									<div id="spotifyTrack" style="font-weight:700" data-i18n="notConnected">Not connected</div>
+									<div id="spotifyArtist" class="small"></div>
+									<div id="spotifyPlayState" class="small"></div>
+								</div>
+								<button id="spotifyDisconnectBtn" type="button" class="ghost" style="display:none;padding:6px 8px;font-size:13px" data-i18n="disconnectBtn">Disconnect</button>
+							</div>
+						</div>
+
+						<div class="search">
+						<input id="filter" type="text" data-i18n-placeholder="searchPlaceholder" placeholder="Search title or content" />
+						<button id="clearAll" class="ghost" type="button" data-i18n="clearAll">Clear All</button>
+					</div>
+					</div>
+					<div id="entries" class="entries"></div>
+				</div>
+			</aside>
+		</div>
+	</div>
+
+	<script>
+		const STORAGE_KEY = 'diary.entries'
+
+		// --- Translations / i18n ---
+		const LANG_KEY = 'diary.lang'
+		const translations = {
+			en: {
+				headerTitle: 'Personal Diary (local-only)',
+				labelTitle: 'Title', titlePlaceholder: 'Short title (optional)',
+				labelDate: 'Date',
+				labelContent: 'Entry', contentPlaceholder: 'Write your diary entry here...',
+				saveBtn: 'Save Entry', newBtn: 'New', exportBtn: 'Export', importBtn: 'Import',
+				searchPlaceholder: 'Search title or content', clearAll: 'Clear All', noEntries: 'No entries yet.',
+				noImage: 'No image set',
+				spotifyTitle: 'Spotify — Now Playing', spotifySubtitle: 'Connect to your Spotify account to show current track',
+				settingsBtn: 'Settings', connectBtn: 'Connect', disconnectBtn: 'Disconnect', notConnected: 'Not connected',
+				clientIdLabel: 'Spotify Client ID (from developer dashboard)', clientIdPlaceholder: 'Your Spotify Client ID',
+				redirectLabel: 'Redirect URI (set this in your Spotify app, e.g. http://localhost:8000/Diary.html)', redirectPlaceholder: 'Redirect URI',
+				saveBtnSmall: 'Save', closeBtn: 'Close', changeImage: 'Change Image', removeImage: 'Remove Image', edit: 'Edit', delete: 'Delete',
+				entryEmpty: 'Entry is empty', confirmDelete: 'Delete this entry?', confirmDeleteAll: 'Delete ALL entries? This cannot be undone.',
+				noEntriesFile: 'No entries found in file', importComplete: 'Import complete', invalidJson: 'Invalid JSON file',
+				removeImageConfirm: 'Remove the saved image?', couldNotLoadImage: 'Could not load image',
+				pleaseSetClientId: 'Please set your Spotify Client ID in settings first', spotifyAuthFailed: 'Spotify auth failed',
+				saved: 'Saved', noTrackPlaying: 'No track playing', playing: 'Playing', paused: 'Paused'
+			},
+			es: {
+				headerTitle: 'Diario personal (local)',
+				labelTitle: 'Título', titlePlaceholder: 'Título corto (opcional)',
+				labelDate: 'Fecha',
+				labelContent: 'Entrada', contentPlaceholder: 'Escribe tu entrada aquí...',
+				saveBtn: 'Guardar entrada', newBtn: 'Nuevo', exportBtn: 'Exportar', importBtn: 'Importar',
+				searchPlaceholder: 'Buscar título o contenido', clearAll: 'Borrar todo', noEntries: 'No hay entradas.',
+				noImage: 'Sin imagen',
+				spotifyTitle: 'Spotify — Reproduciendo', spotifySubtitle: 'Conecta tu cuenta de Spotify para mostrar la pista actual',
+				settingsBtn: 'Ajustes', connectBtn: 'Conectar', disconnectBtn: 'Desconectar', notConnected: 'No conectado',
+				clientIdLabel: 'Spotify Client ID (desde dashboard)', clientIdPlaceholder: 'Tu Client ID',
+				redirectLabel: 'Redirect URI (configura esto en la app de Spotify, por ejemplo http://localhost:8000/Diary.html)', redirectPlaceholder: 'Redirect URI',
+				saveBtnSmall: 'Guardar', closeBtn: 'Cerrar', changeImage: 'Cambiar imagen', removeImage: 'Eliminar imagen', edit: 'Editar', delete: 'Eliminar',
+				entryEmpty: 'La entrada está vacía', confirmDelete: '¿Eliminar esta entrada?', confirmDeleteAll: '¿Eliminar TODAS las entradas? Esto no se puede deshacer.',
+				noEntriesFile: 'No se encontraron entradas en el archivo', importComplete: 'Importación completa', invalidJson: 'Archivo JSON inválido',
+				removeImageConfirm: '¿Eliminar la imagen guardada?', couldNotLoadImage: 'No se pudo cargar la imagen',
+				pleaseSetClientId: 'Por favor configura tu Client ID de Spotify en ajustes primero', spotifyAuthFailed: 'Autenticación de Spotify falló',
+				saved: 'Guardado', noTrackPlaying: 'No se reproduce ninguna pista', playing: 'Reproduciendo', paused: 'Pausado'
+		},
+		vi: {
+			headerTitle: 'Nhật ký cá nhân (chỉ cục bộ)',
+			labelTitle: 'Tiêu đề', titlePlaceholder: 'Tiêu đề ngắn (tùy chọn)',
+			labelDate: 'Ngày',
+			labelContent: 'Mục nhập', contentPlaceholder: 'Viết mục nhập nhật ký của bạn ở đây...',
+			saveBtn: 'Lưu mục nhập', newBtn: 'Mới', exportBtn: 'Xuất', importBtn: 'Nhập',
+			searchPlaceholder: 'Tìm kiếm tiêu đề hoặc nội dung', clearAll: 'Xóa tất cả', noEntries: 'Chưa có mục nhập nào.',
+			noImage: 'Không có hình ảnh',
+			spotifyTitle: 'Spotify — Đang phát', spotifySubtitle: 'Kết nối tài khoản Spotify của bạn để hiển thị bài hát hiện tại',
+			settingsBtn: 'Cài đặt', connectBtn: 'Kết nối', disconnectBtn: 'Ngắt kết nối', notConnected: 'Không kết nối',
+			clientIdLabel: 'Spotify Client ID (từ bảng điều khiển nhà phát triển)', clientIdPlaceholder: 'Client ID của bạn',
+			redirectLabel: 'Redirect URI (đặt cái này trong ứng dụng Spotify của bạn, ví dụ http://localhost:8000/Diary.html)', redirectPlaceholder: 'Redirect URI',
+			saveBtnSmall: 'Lưu', closeBtn: 'Đóng', changeImage: 'Đổi hình ảnh', removeImage: 'Xóa hình ảnh', edit: 'Chỉnh sửa', delete: 'Xóa',
+			entryEmpty: 'Mục nhập trống', confirmDelete: 'Xóa mục nhập này?', confirmDeleteAll: 'Xóa TẤT CẢ mục nhập? Điều này không thể hoàn tác.',
+			noEntriesFile: 'Không tìm thấy mục nhập nào trong tệp', importComplete: 'Nhập xong', invalidJson: 'Tệp JSON không hợp lệ',
+			removeImageConfirm: 'Xóa hình ảnh đã lưu?', couldNotLoadImage: 'Không thể tải hình ảnh',
+			pleaseSetClientId: 'Vui lòng đặt Client ID Spotify của bạn trong cài đặt trước', spotifyAuthFailed: 'Xác thực Spotify thất bại',
+			saved: 'Đã lưu', noTrackPlaying: 'Không có bài hát nào đang phát', playing: 'Đang phát', paused: 'Tạm dừng'
+		},
+		fr: {
+			headerTitle: 'Journal personnel (local uniquement)',
+			labelTitle: 'Titre', titlePlaceholder: 'Titre court (optionnel)',
+			labelDate: 'Date',
+			labelContent: 'Entrée', contentPlaceholder: 'Écrivez votre entrée de journal ici...',
+			saveBtn: 'Enregistrer l\'entrée', newBtn: 'Nouveau', exportBtn: 'Exporter', importBtn: 'Importer',
+			searchPlaceholder: 'Rechercher titre ou contenu', clearAll: 'Tout effacer', noEntries: 'Aucune entrée pour l\'instant.',
+			noImage: 'Aucune image',
+			spotifyTitle: 'Spotify — En lecture', spotifySubtitle: 'Connectez votre compte Spotify pour afficher la piste actuelle',
+			settingsBtn: 'Paramètres', connectBtn: 'Connecter', disconnectBtn: 'Déconnecter', notConnected: 'Non connecté',
+			clientIdLabel: 'Spotify Client ID (depuis le tableau de bord développeur)', clientIdPlaceholder: 'Votre Client ID',
+			redirectLabel: 'Redirect URI (définissez-le dans votre application Spotify, par exemple http://localhost:8000/Diary.html)', redirectPlaceholder: 'Redirect URI',
+			saveBtnSmall: 'Enregistrer', closeBtn: 'Fermer', changeImage: 'Changer l\'image', removeImage: 'Supprimer l\'image', edit: 'Modifier', delete: 'Supprimer',
+			entryEmpty: 'L\'entrée est vide', confirmDelete: 'Supprimer cette entrée?', confirmDeleteAll: 'Supprimer TOUTES les entrées? Cette action ne peut pas être annulée.',
+			noEntriesFile: 'Aucune entrée trouvée dans le fichier', importComplete: 'Importation terminée', invalidJson: 'Fichier JSON invalide',
+			removeImageConfirm: 'Supprimer l\'image enregistrée?', couldNotLoadImage: 'Impossible de charger l\'image',
+			pleaseSetClientId: 'Veuillez d\'abord définir votre Client ID Spotify dans les paramètres', spotifyAuthFailed: 'Échec de l\'authentification Spotify',
+			saved: 'Enregistré', noTrackPlaying: 'Aucune piste en cours de lecture', playing: 'En lecture', paused: 'En pause'
+		}
+	}
+
+	function t(key){
+			const lang = localStorage.getItem(LANG_KEY) || 'en'
+			return (translations[lang] && translations[lang][key]) || translations['en'][key] || key
+		}
+
+		function applyTranslations(){
+			document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')) })
+			document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{ el.placeholder = t(el.getAttribute('data-i18n-placeholder')) })
+			// update any dynamic text
+			const entries = document.getElementById('entries')
+			if(entries && entries.children.length===0) entries.innerHTML = '<div class="small">'+t('noEntries')+'</div>'
+		}
+
+		document.getElementById('langSelect').addEventListener('change', e=>{ localStorage.setItem(LANG_KEY, e.target.value); applyTranslations() })
+		// set initial language
+		if(!localStorage.getItem(LANG_KEY)) localStorage.setItem(LANG_KEY, 'en')
+		document.getElementById('langSelect').value = localStorage.getItem(LANG_KEY)
+		applyTranslations()
+
+		function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+
+		function loadEntries(){
+			try{
+				const raw = localStorage.getItem(STORAGE_KEY)
+				return raw ? JSON.parse(raw) : []
+			}catch(e){console.error('loadEntries',e); return []}
+		}
+
+		function saveEntries(list){
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+		}
+
+		function renderEntries(){
+			const container = document.getElementById('entries')
+			const list = loadEntries()
+			const filter = document.getElementById('filter').value.toLowerCase().trim()
+			const filtered = list.slice().reverse().filter(e=>{
+				if(!filter) return true
+				return (e.title||'').toLowerCase().includes(filter) || (e.content||'').toLowerCase().includes(filter)
+			})
+			container.innerHTML = ''
+			if(filtered.length===0){container.innerHTML = '<div class="small">'+t('noEntries')+'</div>'; return}
+			filtered.forEach(e=>{
+				const el = document.createElement('div')
+				el.className = 'entry-item'
+				el.innerHTML = `
+					<div class="entry-meta">
+						<div>
+							<div class="entry-title">${escapeHtml(e.title||'(untitled)')}</div>
+							<div class="small">${e.date || new Date(e.createdAt).toLocaleString()}</div>
+						</div>
+						<div class="controls">
+							<button data-id="${e.id}" class="edit">${t('edit')}</button>
+								<button data-id="${e.id}" class="del ghost">${t('delete')}</button>
+						</div>
+					</div>
+					<div style="margin-top:8px;white-space:pre-wrap;color:#223">${escapeHtml(e.content||'')}</div>
+				`
+				container.appendChild(el)
+			})
+		}
+
+		function escapeHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[ch])}
+
+		function saveEntry(){
+			const title = document.getElementById('title').value.trim()
+			const date = document.getElementById('date').value
+			const content = document.getElementById('content').value.trim()
+			if(!content){alert(t('entryEmpty')); return}
+			const editing = document.getElementById('entryForm').dataset.editing
+			const list = loadEntries()
+			if(editing){
+				const idx = list.findIndex(x=>x.id===editing)
+				if(idx>=0){list[idx].title = title; list[idx].date = date; list[idx].content = content; list[idx].updatedAt = Date.now()}
+				delete document.getElementById('entryForm').dataset.editing
+			} else {
+				list.push({id:uid(), title, date, content, createdAt:Date.now(), updatedAt:Date.now()})
+			}
+			saveEntries(list)
+			clearForm()
+			renderEntries()
+		}
+
+		function clearForm(){
+			document.getElementById('title').value=''
+			document.getElementById('date').value=''
+			document.getElementById('content').value=''
+			delete document.getElementById('entryForm').dataset.editing
+		}
+
+		function editEntry(id){
+			const list = loadEntries()
+			const e = list.find(x=>x.id===id)
+			if(!e) return
+			document.getElementById('title').value = e.title||''
+			document.getElementById('date').value = e.date||''
+			document.getElementById('content').value = e.content||''
+			document.getElementById('entryForm').dataset.editing = id
+			window.scrollTo({top:0,behavior:'smooth'})
+		}
+
+		function deleteEntry(id){
+			if(!confirm(t('confirmDelete'))) return
+			let list = loadEntries()
+			list = list.filter(x=>x.id!==id)
+			saveEntries(list)
+			renderEntries()
+		}
+
+		function clearAll(){
+			if(!confirm(t('confirmDeleteAll'))) return
+			localStorage.removeItem(STORAGE_KEY)
+			renderEntries()
+		}
+
+		function exportEntries(){
+			const data = loadEntries()
+			const blob = new Blob([JSON.stringify({ exportedAt:Date.now(), entries:data }, null, 2)], {type:'application/json'})
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = `diary-export-${new Date().toISOString().slice(0,10)}.json`
+			document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+		}
+
+		function importEntriesFile(file){
+			if(!file) return
+			const reader = new FileReader()
+			reader.onload = ()=>{
+				try{
+					const obj = JSON.parse(reader.result)
+					const entries = Array.isArray(obj.entries) ? obj.entries : (Array.isArray(obj) ? obj : [])
+					if(!entries.length){alert(t('noEntriesFile')); return}
+					const existing = loadEntries()
+					const merged = existing.concat(entries.map(e=>({ ...e, id: e.id || uid(), createdAt: e.createdAt || Date.now(), updatedAt: e.updatedAt || Date.now() })))
+					saveEntries(merged)
+					renderEntries()
+					alert(t('importComplete'))
+				}catch(e){alert(t('invalidJson'))}
+			}
+			reader.readAsText(file)
+		}
+
+		// events
+		document.getElementById('saveBtn').addEventListener('click', saveEntry)
+		document.getElementById('newBtn').addEventListener('click', clearForm)
+		document.getElementById('filter').addEventListener('input', renderEntries)
+		document.getElementById('clearAll').addEventListener('click', clearAll)
+		document.getElementById('exportBtn').addEventListener('click', exportEntries)
+		document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('fileInput').click())
+		document.getElementById('fileInput').addEventListener('change', e=>importEntriesFile(e.target.files[0]))
+
+		document.getElementById('entries').addEventListener('click', e=>{
+			const t = e.target
+			if(t.matches('button.edit')) editEntry(t.dataset.id)
+			if(t.matches('button.del')) deleteEntry(t.dataset.id)
+		})
+
+		// header image management (stored as data URL)
+		const IMAGE_KEY = 'diary.headerImage'
+		function loadHeaderImage(){
+			const data = localStorage.getItem(IMAGE_KEY)
+			const img = document.getElementById('headerImage')
+			const ph = document.getElementById('imagePlaceholder')
+			if(data){
+				img.src = data
+				img.style.display = 'block'
+				ph.style.display = 'none'
+			} else {
+				img.src = ''
+				img.style.display = 'none'
+				ph.style.display = 'block'
+			}
+		}
+
+		document.getElementById('changeImageBtn').addEventListener('click', ()=>document.getElementById('imageFileInput').click())
+		document.getElementById('removeImageBtn').addEventListener('click', ()=>{
+			if(!confirm(t('removeImageConfirm'))) return
+			localStorage.removeItem(IMAGE_KEY)
+			loadHeaderImage()
+		})
+		document.getElementById('imageFileInput').addEventListener('change', e=>{
+			const f = e.target.files && e.target.files[0]
+			if(!f) return
+			const reader = new FileReader()
+			reader.onload = ()=>{
+				try{
+					const dataUrl = reader.result
+					localStorage.setItem(IMAGE_KEY, dataUrl)
+					loadHeaderImage()
+				}catch(err){alert(t('couldNotLoadImage'))}
+			}
+			reader.readAsDataURL(f)
+		})
+		document.getElementById('headerImage').addEventListener('click', ()=>document.getElementById('imageFileInput').click())
+
+		// --- Spotify PKCE OAuth (simplified for easy connect) ---
+		const SP_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID_HERE' // Replace with your Client ID from Spotify Dashboard
+		const SP_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : 'http://localhost:8000/Diary.html'
+		const SP_TOKEN_KEY = 'diary.spotifyToken'
+
+		function base64urlEncode(buffer){
+			const bytes = new Uint8Array(buffer)
+			let str = '';
+			for(const b of bytes) str += String.fromCharCode(b)
+			return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
+		}
+
+		async function sha256(buffer){
+			const b = new TextEncoder().encode(buffer)
+			const digest = await crypto.subtle.digest('SHA-256', b)
+			return base64urlEncode(digest)
+		}
+
+		function generateVerifier(){
+			const arr = new Uint8Array(64)
+			crypto.getRandomValues(arr)
+			return Array.from(arr).map(n=>('0'+(n%36).toString(36)).slice(-1)).join('')
+		}
+
+		async function startSpotifyAuth(){
+			const codeVerifier = generateVerifier()
+			const codeChallenge = await sha256(codeVerifier)
+			sessionStorage.setItem('sp_code_verifier', codeVerifier)
+			const scope = encodeURIComponent('user-read-currently-playing user-read-playback-state')
+			const url = `https://accounts.spotify.com/authorize?response_type=code&client_id=${encodeURIComponent(SP_CLIENT_ID)}&scope=${scope}&redirect_uri=${encodeURIComponent(SP_REDIRECT_URI)}&code_challenge_method=S256&code_challenge=${encodeURIComponent(codeChallenge)}`
+			location.href = url
+		}
+
+		async function exchangeCodeForToken(code, codeVerifier){
+			const body = new URLSearchParams({
+				grant_type: 'authorization_code',
+				code,
+				redirect_uri: SP_REDIRECT_URI,
+				client_id: SP_CLIENT_ID,
+				code_verifier: codeVerifier
+			})
+			const res = await fetch('https://accounts.spotify.com/api/token', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body})
+			if(!res.ok) throw new Error('Token exchange failed')
+			return res.json()
+		}
+
+		async function refreshAccessToken(refreshToken){
+			const body = new URLSearchParams({grant_type:'refresh_token', refresh_token:refreshToken, client_id:SP_CLIENT_ID})
+			const res = await fetch('https://accounts.spotify.com/api/token', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body})
+			if(!res.ok) throw new Error('Refresh failed')
+			return res.json()
+		}
+
+		async function handleRedirectIfNeeded(){
+			const params = new URLSearchParams(window.location.search)
+			const code = params.get('code')
+			if(!code) return
+			const codeVerifier = sessionStorage.getItem('sp_code_verifier')
+			try{
+				const tokenResp = await exchangeCodeForToken(code, codeVerifier)
+				tokenResp._obtained_at = Date.now()/1000
+				localStorage.setItem(SP_TOKEN_KEY, JSON.stringify(tokenResp))
+				params.delete('code')
+				history.replaceState({}, document.title, window.location.pathname)
+				startNowPlayingPoll()
+			}catch(err){console.error(err); alert(t('spotifyAuthFailed'))}
+		}
+
+		async function getAccessToken(){
+			const stored = JSON.parse(localStorage.getItem(SP_TOKEN_KEY) || 'null')
+			if(!stored) return null
+			const now = Date.now()/1000
+			if(stored.expires_in && stored._obtained_at && now > stored._obtained_at + stored.expires_in - 60){
+				try{
+					const refreshed = await refreshAccessToken(stored.refresh_token)
+					refreshed._obtained_at = Date.now()/1000
+					refreshed.refresh_token = refreshed.refresh_token || stored.refresh_token
+					localStorage.setItem(SP_TOKEN_KEY, JSON.stringify(refreshed))
+					return refreshed.access_token
+				}catch(e){console.error('refresh',e); return null}
+			}
+			return stored.access_token
+		}
+
+		async function fetchNowPlaying(){
+			const token = await getAccessToken()
+			if(!token) return null
+			try{
+				const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {headers:{Authorization:`Bearer ${token}`}})
+				if(res.status===204 || res.status===404) return null
+				if(res.status===401){
+					localStorage.removeItem(SP_TOKEN_KEY)
+					return null
+				}
+				if(!res.ok) return null
+				return res.json()
+			}catch(e){console.error(e); return null}
+		}
+
+		let _pollTimer = null
+		async function startNowPlayingPoll(){
+			if(_pollTimer) clearInterval(_pollTimer)
+			await updateNowPlaying()
+			_pollTimer = setInterval(updateNowPlaying, 10000)
+		}
+
+		async function updateNowPlaying(){
+			const data = await fetchNowPlaying()
+			if(!data){
+				document.getElementById('spotifyTrack').textContent = t('notConnected')
+				document.getElementById('spotifyArtist').textContent = ''
+				document.getElementById('spotifyAlbum').style.display='none'
+				document.getElementById('spotifyPlayState').textContent = ''
+				document.getElementById('spotifyDisconnectBtn').style.display='none'
+				return
+			}
+			const item = data.item
+			document.getElementById('spotifyTrack').textContent = item.name
+			document.getElementById('spotifyArtist').textContent = item.artists.map(a=>a.name).join(', ')
+			const img = item.album.images && item.album.images[0] && item.album.images[0].url
+			if(img){
+				document.getElementById('spotifyAlbum').src = img
+				document.getElementById('spotifyAlbum').style.display='block'
+			}
+			document.getElementById('spotifyPlayState').textContent = data.is_playing ? t('playing') : t('paused')
+			document.getElementById('spotifyDisconnectBtn').style.display='block'
+		}
+
+		document.getElementById('spotifyConnectBtn').addEventListener('click', startSpotifyAuth)
+		document.getElementById('spotifyDisconnectBtn').addEventListener('click', ()=>{
+			localStorage.removeItem(SP_TOKEN_KEY)
+			if(_pollTimer) clearInterval(_pollTimer)
+			document.getElementById('spotifyTrack').textContent = t('notConnected')
+			document.getElementById('spotifyArtist').textContent = ''
+			document.getElementById('spotifyAlbum').style.display='none'
+			document.getElementById('spotifyPlayState').textContent = ''
+			document.getElementById('spotifyDisconnectBtn').style.display='none'
+		})
+
+		// Check if already authenticated and start polling
+		handleRedirectIfNeeded().then(()=>{
+			if(localStorage.getItem(SP_TOKEN_KEY)) startNowPlayingPoll()
+		})
+
+		// initial render
+		renderEntries()
+		loadHeaderImage()
+	</script>
+</body>
+</html>
